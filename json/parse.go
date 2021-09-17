@@ -322,6 +322,13 @@ func (d decoder) parseNumber(b []byte) (v, r []byte, kind Kind, err error) {
 	kind = Uint
 
 	i := 0
+
+	quoted := false
+	// check if quoted numeric
+	if b[i] == '"' && len(b) > 1 {
+		i++
+		quoted = true
+	}
 	// sign
 	if b[i] == '-' {
 		kind = Int
@@ -342,7 +349,11 @@ func (d decoder) parseNumber(b []byte) (v, r []byte, kind Kind, err error) {
 	if b[i] == '0' {
 		i++
 		if i == len(b) || (b[i] != '.' && b[i] != 'e' && b[i] != 'E') {
-			v, r = b[:i], b[i:]
+			if quoted {
+				v, r = b[1:i], b[i+1:]
+			} else {
+				v, r = b[:i], b[i:]
+			}
 			return
 		}
 		if '0' <= b[i] && b[i] <= '9' {
@@ -407,8 +418,11 @@ func (d decoder) parseNumber(b []byte) (v, r []byte, kind Kind, err error) {
 			i++
 		}
 	}
-
-	v, r = b[:i], b[i:]
+	if quoted {
+		v, r = b[1:i], b[i+1:]
+	} else {
+		v, r = b[:i], b[i:]
+	}
 	return
 }
 
